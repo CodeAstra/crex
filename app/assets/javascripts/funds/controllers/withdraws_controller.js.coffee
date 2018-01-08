@@ -1,4 +1,4 @@
-app.controller 'WithdrawsController', ['$scope', '$stateParams', '$http', '$gon', 'fundSourceService', 'ngDialog', ($scope, $stateParams, $http, $gon, fundSourceService, ngDialog) ->
+app.controller 'WithdrawsController', ['$scope', '$stateParams', '$http', '$gon', 'fundSourceService', '$filter', 'ngDialog', ($scope, $stateParams, $http, $gon, fundSourceService, $filter, ngDialog) ->
 
   _selectedFundSourceId = null
   _selectedFundSourceIdInList = (list) ->
@@ -45,6 +45,7 @@ app.controller 'WithdrawsController', ['$scope', '$stateParams', '$http', '$gon'
     withdraw_channel = WithdrawChannel.findBy('currency', currency)
     account = withdraw_channel.account()
     data = { withdraw: { member_id: current_user.id, currency: currency, sum: @withdraw.sum, fund_source_id: _selectedFundSourceId } }
+    #data = { withdraw: { member_id: current_user.id, currency: currency, sum: @withdraw.sum, fund_source: _selectedFundSourceId } }
 
     if current_user.app_activated or current_user.sms_activated
       type = $('.two_factor_auth_type').val()
@@ -65,6 +66,12 @@ app.controller 'WithdrawsController', ['$scope', '$stateParams', '$http', '$gon'
         $.publish 'withdraw:form:submitted'
 
   @withdrawAll = ->
+
+    fee = parseFloat($('#withdraw_balance').html())*0.002
+    if isNaN(fee)
+      fee = 0
+    $('#withdraw_fee').html fee
+
     @withdraw.sum = Number($scope.account.balance)
 
   $scope.openFundSourceManagerPanel = ->
@@ -80,6 +87,12 @@ app.controller 'WithdrawsController', ['$scope', '$stateParams', '$http', '$gon'
       controller: 'FundSourcesController'
       className: className
       data: {currency: $scope.currency}
+
+  $scope.aboutfee = ->
+    ngDialog.openConfirm
+      template: '/templates/shared/aboutfee_dialog.html'
+      #data: {content: $filter('t')('funds.withdraw_coin.fee_explain_message')}
+      data: {content: 'Withdraw fee is 0.2% from total amount '}
 
   $scope.sms_and_app_activated = ->
     current_user.app_activated and current_user.sms_activated
